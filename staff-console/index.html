@@ -220,6 +220,7 @@ th{font-weight:400;color:var(--ink-muted);font-size:12px;white-space:nowrap}
 .simrow{display:flex;gap:8px}
 .simrow select{flex:1;min-width:0;border-radius:999px;padding:10px 14px;border:1px solid var(--glass-edge);background:rgba(255,255,255,.85)}
 .app .simrow .btn{width:auto;padding-inline:24px}
+.sharelink{width:100%;border-radius:16px;padding:11px 14px;border:1px solid var(--glass-edge);background:rgba(255,255,255,.85);font-size:13px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
@@ -293,7 +294,19 @@ const tone=i=>`--c:${pc(i)[0]};--f:${pc(i)[1]}`;
 const zi=z=>Math.max(0,route().indexOf(z));
 
 const cols=(lead,main)=>`<div class="lead">${lead}</div><div class="main">${main}</div>`;
+/* ---------- visitor session: random profile id, kept in sessionStorage for 1 day ---------- */
+const STORE="pttep-twin",DAY=864e5;
+// 8 chars from a 32-letter alphabet (no 0/O/1/I); 256 % 32 == 0 so every letter is equally likely
+const newId=()=>"PT-"+[...crypto.getRandomValues(new Uint8Array(8))].map(b=>"23456789ABCDEFGHJKLMNPQRSTUVWXYZ"[b%32]).join("");
+function loadSession(){try{const d=JSON.parse(sessionStorage.getItem(STORE));if(!d||!d.S)return null;
+  if(!(Date.now()-d.S.started<DAY)){sessionStorage.removeItem(STORE);return null}return d.S}catch(e){return null}}
+function saveSession(){if(S.step!=="app")return;
+  // a big selfie can overflow the ~5 MB quota: keep everything else rather than lose the visit
+  for(const d of[S,{...S,photo:null}])try{sessionStorage.setItem(STORE,JSON.stringify({S:d}));return}catch(e){}}
+function clearSession(){try{sessionStorage.removeItem(STORE)}catch(e){}}
+const signOut=()=>{clearSession();Object.assign(S,{step:"scan",id:"",tab:"route",zone:null,consent:false,photo:null,visited:[],saved:[],redeemed:false,offerTaken:false,showLink:false})};
 function render(){
+  if(S.step==="app"&&Date.now()-S.started>=DAY){signOut();toast("Your session ended after 1 day")}
   let body="",bottom="";
   $("me").hidden=S.step!=="app";$("me-av").src=avatarSrc();
   if(S.step==="scan"){
@@ -306,7 +319,7 @@ function render(){
     const g=GROUPS[S.group];
     body=cols(`<span class="chip glass">PTTEP Digital Twin profile</span><h1 class="hero xl">${esc(S.name)}</h1><p class="lede">${esc([S.title,S.company].filter(Boolean).join(" · "))}</p>`,
     `<div class="card glass"><img class="logo" src="${LOGO}" alt="PTTEP"><img class="avatar lg" src="${avatarSrc()}" alt=""><div><h2>${esc(S.name)}</h2><p class="small muted">${g.name}</p></div>
-    <div class="rows" style="width:100%;text-align:left"><div><span>Profile ID</span><b class="num">${esc(S.badge)}</b></div><div><span>Company</span><b>${esc(S.company||"–")}</b></div><div><span>Job title</span><b>${esc(S.title||"–")}</b></div><div><span>Group</span><b>${g.name}</b></div></div></div>`);
+    <div class="rows" style="width:100%;text-align:left"><div><span>Profile ID</span><b class="num">${esc(S.id||S.badge)}</b></div><div><span>Badge</span><b class="num">${esc(S.badge)}</b></div><div><span>Company</span><b>${esc(S.company||"–")}</b></div><div><span>Job title</span><b>${esc(S.title||"–")}</b></div><div><span>Group</span><b>${g.name}</b></div></div></div>`);
   }else if(S.step==="create"){
     body=cols(`<span class="chip glass">✓ Profile from booth staff</span><h1 class="hero xl">Welcome, ${esc(S.name.split(" ")[0])}</h1><p class="lede">Check your details, add a selfie, and you're in.</p>`,`
     <div class="panel-glass glass">
@@ -322,7 +335,7 @@ function render(){
     const nz=nextZone(),tab=(k,n)=>`<button data-tab="${k}" ${S.tab===k?'aria-current="page"':""}>${ICON[k]}<span>${n}</span></button>`;
     bottom=`<nav class="tabbar glass" aria-label="App">${tab("route","Route")}<button class="scan" data-tab="card" aria-label="My card" ${S.tab==="card"?'aria-current="page"':""}>${ICON.card}</button>${tab("me","Summary")}</nav>`;
   }
-  $("screen").innerHTML=body;$("bottom").innerHTML=bottom;
+  $("screen").innerHTML=body;$("bottom").innerHTML=bottom;saveSession();
 }
 function routeView(){
   const g=GROUPS[S.group],nz=nextZone(),n=S.visited.length,tot=route().length;
@@ -368,7 +381,7 @@ function meView(){
   <div class="rows glass"><div><span>Zones visited</span><b class="num">${S.visited.length} / ${route().length}</b></div><div><span>Time at booth</span><b class="num">${mins} min</b></div><div><span>Content viewed</span><b class="num">${S.visited.reduce((n,z)=>n+ZONES[z].i.length,0)} items</b></div><div><span>Gift</span><b>${S.redeemed?"Collected":"Not yet"}</b></div></div>`,`
   <div><h3 style="margin-bottom:10px">Saved for follow-up</h3>${S.saved.length?`<ol class="stack">${S.saved.map(z=>`<li><button class="zc done" style="${tone(zi(z))}" data-tab="route" data-open="${esc(z)}"><span class="t">${esc(z)}<small>${esc(ZONES[z].d)}</small></span><span class="go" aria-hidden="true">↗</span></button></li>`).join("")}</ol>`:`<p class="small muted">Nothing saved yet. Tap Save for follow-up on any zone you visit.</p>`}</div>
   <div class="offer" style="${tone(1)}"><span class="label">For you</span><h2>${g.offer}</h2><p class="small muted">${g.offerSub}</p>${S.offerTaken?`<p class="tick">✓ Requested. We'll email you.</p>`:`<button class="btn" id="go-offer">${g.cta} →</button>`}</div>
-  <button class="btn ghost" id="go-copy">Copy link to my avatar</button><button class="btn ghost" id="go-reset">Sign out</button>`);
+  <button class="btn ghost" id="go-copy">Share my profile</button>${S.showLink?`<input class="sharelink" id="share-link" readonly aria-label="Link to my profile" value="${esc(cardUrl(S))}">`:""}<button class="btn ghost" id="go-reset">Sign out</button>`);
 }
 
 // Real QR (qrcode-generator, UTF-8) drawn into a 21-unit viewBox with a 1-module quiet zone
@@ -389,7 +402,7 @@ document.addEventListener("click",e=>{
     case"sc-close":closeScanner();break;
     case"sc-sim":{const f=SCAN&&SCAN.sim;closeScanner();if(f)f();break}
     case"go-sample":importLeads(SAMPLE);break;
-    case"go-create":S.visited=["Reception"];S.started=Date.now();S.step="app";S.tab="route";render();toast("Twin created. Reception badge earned.");break;
+    case"go-create":S.id=newId();S.visited=["Reception"];S.started=Date.now();S.step="app";S.tab="route";render();toast("Twin created. Reception badge earned.");break;
     case"staff-scan":openScanner(onStaffScan,simStaffScan);break;
     case"go-save":{const on=S.saved.includes(S.zone);S.saved=on?S.saved.filter(z=>z!==S.zone):[...S.saved,S.zone];render();toast(on?"Removed from follow-up":"Saved for follow-up");break}
     case"go-simscan":{const z=$("f-sim").value;
@@ -398,8 +411,13 @@ document.addEventListener("click",e=>{
       else{S.visited.push(z);toast(`Checked in at ${z}`)}
       render();break}
     case"go-offer":S.offerTaken=true;render();break;
-    case"go-copy":{const url="https://twin.pttep.example/"+S.badge;Promise.resolve().then(()=>navigator.clipboard.writeText(url)).then(()=>toast("Link copied"),()=>toast(url));break}
-    case"go-reset":Object.assign(S,{step:"scan",tab:"route",zone:null,consent:false,photo:null,visited:[],saved:[],redeemed:false,offerTaken:false});render();break;
+    case"go-copy":{const url=cardUrl(S);
+      // phone share sheet first, then clipboard; if both are blocked (e.g. inside an iframe) show the link to copy by hand
+      const show=()=>{S.showLink=true;render();const i=$("share-link");i.focus();i.select();toast("Copy the link below")};
+      const copy=()=>Promise.resolve().then(()=>navigator.clipboard.writeText(url)).then(()=>toast("Link copied"),show);
+      if(navigator.share)navigator.share({title:`${S.name} · PTTEP Digital Twin`,url}).catch(e=>{if(e.name!=="AbortError")copy()});else copy();
+      break}
+    case"go-reset":signOut();render();break;
     case"go-export":toast("Export is not connected in this prototype");break;
   }
 });
@@ -507,7 +525,7 @@ const qs=p=>new URLSearchParams({b:p.badge,n:p.name,c:p.company,t:p.title,g:p.gr
 const loginUrl=p=>VISITOR_URL+"?"+qs(p);
 // real path per profile, served on GitHub Pages through the site-root 404.html
 // shortcut: the details ride in the #fragment (never sent to a server); drop them once a backend can look the id up
-const cardUrl=p=>SITE_ROOT+"profile/"+encodeURIComponent(p.badge)+"#"+new URLSearchParams({n:p.name,c:p.company,t:p.title,g:p.group});
+const cardUrl=p=>SITE_ROOT+"profile/"+encodeURIComponent(p.id||p.badge)+"#"+new URLSearchParams({b:p.badge,n:p.name,c:p.company,t:p.title,g:p.group});
 let CAM=null,SCAN=null;
 function readQR(src,w,h){const r=jsQR(src,w,h);return r&&r.data}
 async function openScanner(read,sim){
@@ -546,9 +564,9 @@ function parseVisitor(text){
   if(!u||!/^https?:$/.test(u.protocol))return null;
   // card QR: <site>/profile/<id>#details · after the 404 redirect: ?profile=<id>#details · login QR: ?b=<id>&n=…
   let id=null;const m=u.pathname.match(/\/profile\/([^/]+)\/?$/);try{id=m?decodeURIComponent(m[1]):u.searchParams.get("profile")}catch(e){}
-  const P=id?new URLSearchParams(u.hash.slice(1)):u.searchParams,q=k=>(P.get(k)||"").slice(0,80),b=(id||q("b")).slice(0,40);
+  const P=id?new URLSearchParams(u.hash.slice(1)):u.searchParams,q=k=>(P.get(k)||"").slice(0,80),b=(q("b")||id||"").slice(0,40);
   if(!b)return null;
-  return{badge:b,name:q("n")||"Visitor",company:q("c"),title:q("t"),group:GROUPS[q("g")]?q("g"):"dm"};
+  return{id:(id||"").slice(0,40),badge:b,name:q("n")||"Visitor",company:q("c"),title:q("t"),group:GROUPS[q("g")]?q("g"):"dm"};
 }
 const STATIONS=Object.keys(ZONES).filter(z=>z!=="Reception");
 let ST="Worldwide Operation",LAST=null,SCANS=[];
