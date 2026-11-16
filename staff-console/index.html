@@ -249,7 +249,7 @@ const GROUPS={
   dm:{name:"Decision Makers",th:"ผู้บริหาร / นักลงทุน",route:["Reception","Worldwide Operation","Immersive Room","LED / Digital X","Discussion / EP Cafe","Meeting Room"],offer:"Meet a PTTEP executive",offerSub:"Pick a 30-minute slot in the Meeting Room today or tomorrow.",cta:"Book a meeting",view:"Partnership view"},
   gov:{name:"Government & Regulators",th:"หน่วยงานรัฐ / ผู้กำกับดูแล",route:["Reception","Worldwide Operation","Immersive Room","M&I + R&D","Low BTU / Wellhead","EP Forum","Meeting Room"],offer:"Get the policy briefing",offerSub:"Decommissioning and emissions briefing pack, sent to your badge email.",cta:"Request briefing",view:"Policy view"},
   tech:{name:"Technical Experts",th:"วิศวกร / ผู้เชี่ยวชาญเทคนิค",route:["Reception","LED / Digital X","M&I + R&D","Low BTU / Wellhead","EP Forum","Discussion / EP Cafe"],offer:"Low BTU Flare technical paper",offerSub:"Download the paper and get an introduction to the engineering team.",cta:"Request paper",view:"Technical view"},
-  talent:{name:"Future Talent & Academia",th:"นักศึกษา / นักวิจัย / คนรุ่นใหม่",route:["Reception","Immersive Room","Worldwide Operation","LED / Digital X","EP Forum","Redeem"],offer:"Join the PTTEP talent pool",offerSub:"Get internship and graduate programme alerts.",cta:"Join talent pool",view:"Careers view"}
+  talent:{name:"Future Talent & Academia",th:"นักศึกษา / นักวิจัย / คนรุ่นใหม่",route:["Reception","Immersive Room","Worldwide Operation","LED / Digital X","EP Forum"],offer:"Join the PTTEP talent pool",offerSub:"Get internship and graduate programme alerts.",cta:"Join talent pool",view:"Careers view"}
 };
 // Demo zone content; replace with the real booth copy
 const ZONES={
@@ -278,6 +278,10 @@ const LOGO=$("logo").src;
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const route=()=>GROUPS[S.group].route;
 const nextZone=()=>route().find(z=>!S.visited.includes(z));
+// zones each group must visit before the gift unlocks ("all" = whole route); Reception is automatic so it does not count
+const REDEEM_AT={dm:2,gov:3,tech:4,talent:"all"},notRec=z=>z!=="Reception";
+const toRedeem=()=>{const zones=route().filter(notRec).length,need=REDEEM_AT[S.group]==="all"?zones:Math.min(REDEEM_AT[S.group],zones);
+  return Math.max(0,need-S.visited.filter(notRec).length)};
 
 function avatarSrc(name=S.name,photo=S.photo){
   if(photo)return photo;
@@ -342,12 +346,15 @@ function routeView(){
   return cols(`<span class="chip glass">${g.name}</span>
   <div><h1 class="hero">Hi ${esc(S.name.split(" ")[0])},<br>${nz?"where next?":"route complete!"}</h1>
   <p class="meta"><span class="num">${n} of ${tot}</span> zones${nz?` · next stop ${esc(nz)}`:""}</p><div class="progress glass"><i style="width:${n/tot*100}%"></i></div></div>
-  ${nz?"":`<div class="offer glass"><span class="label">Route complete</span><h2>Collect your gift</h2><p class="small muted">Show your card to staff at the Redeem counter.</p><button class="btn" data-tab="card">Open my card →</button></div>`}`,`
+  ${toRedeem()||S.redeemed?"":`<div class="offer glass"><span class="label">Gift unlocked</span><h2>Collect your gift</h2><p class="small muted">Show your card to staff at the Redeem counter.</p><button class="btn" data-tab="card">Open my card →</button></div>`}`,`
   <ol class="stack">${route().map((z,j)=>{const st=S.visited.includes(z)?"done":z===nz?"now":"todo";
     const attr=st==="done"?`data-zone="${esc(z)}"`:st==="now"?'data-tab="card"':"disabled";
     const tag=st==="done"?`<small class="badge">✓ Visited${S.saved.includes(z)?" · ★ Saved":""}</small>`:st==="now"?"<small>Next · show your card to staff</small>":"";
     // only scanned zones take their colour; the rest stay grey
-    return `<li><button class="zc ${st}" ${st==="done"?`style="${tone(j)}"`:""} ${attr}><span class="n num">${String(j+1).padStart(2,"0")}</span><span class="t">${esc(z)}${tag}</span><span class="go" aria-hidden="true">↗</span></button></li>`}).join("")}</ol>`);
+    return `<li><button class="zc ${st}" ${st==="done"?`style="${tone(j)}"`:""} ${attr}><span class="n num">${String(j+1).padStart(2,"0")}</span><span class="t">${esc(z)}${tag}</span><span class="go" aria-hidden="true">↗</span></button></li>`}).join("")}
+  ${(()=>{const st=S.redeemed?"done":toRedeem()?"todo":"now",left=toRedeem();
+    // every group ends at Redeem; it is not a zone, so it has no number and is not counted
+    return `<li><button class="zc ${st}" ${st==="done"?`style="${tone(route().length)}"`:""} ${st==="todo"?"disabled":'data-tab="card"'}><span class="n" aria-hidden="true">🎁</span><span class="t">Redeem${st==="done"?'<small class="badge">✓ Gift collected</small>':st==="now"?"<small>Next · show your card to staff</small>":`<small>Visit ${left} more zone${left>1?"s":""} to unlock</small>`}</span><span class="go" aria-hidden="true">↗</span></button></li>`})()}</ol>`);
 }
 function zoneView(){
   const z=ZONES[S.zone],g=GROUPS[S.group],j=zi(S.zone),nz=nextZone(),saved=S.saved.includes(S.zone);
@@ -406,7 +413,7 @@ document.addEventListener("click",e=>{
     case"staff-scan":openScanner(onStaffScan,simStaffScan);break;
     case"go-save":{const on=S.saved.includes(S.zone);S.saved=on?S.saved.filter(z=>z!==S.zone):[...S.saved,S.zone];render();toast(on?"Removed from follow-up":"Saved for follow-up");break}
     case"go-simscan":{const z=$("f-sim").value;
-      if(z==="Redeem"){S.redeemed=true;if(route().includes("Redeem")&&!S.visited.includes("Redeem"))S.visited.push("Redeem");toast("Gift collected")}
+      if(z==="Redeem"){if(toRedeem())toast(`Not yet: visit ${toRedeem()} more zone${toRedeem()>1?"s":""} first`);else{S.redeemed=true;toast("Gift collected")}}
       else if(S.visited.includes(z))toast(`Already checked in at ${z}`);
       else{S.visited.push(z);toast(`Checked in at ${z}`)}
       render();break}
