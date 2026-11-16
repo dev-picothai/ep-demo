@@ -216,6 +216,10 @@ th{font-weight:400;color:var(--ink-muted);font-size:12px;white-space:nowrap}
   .groups{grid-template-columns:1fr 1fr}
   .card{max-width:480px}
 }
+.simscan{border-radius:24px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.simrow{display:flex;gap:8px}
+.simrow select{flex:1;min-width:0;border-radius:999px;padding:10px 14px;border:1px solid var(--glass-edge);background:rgba(255,255,255,.85)}
+.app .simrow .btn{width:auto;padding-inline:24px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
@@ -349,7 +353,14 @@ function cardView(){
   <div class="card glass"><img class="logo" src="${LOGO}" alt="PTTEP"><img class="avatar lg" src="${avatarSrc()}" alt="Your avatar"><div><h2>${esc(S.name)}</h2><p class="small muted">${g.name}</p></div>
   <div class="stamps">${route().map((z,j)=>S.visited.includes(z)?`<span class="stamp" style="${tone(j)}">${esc(z)}</span>`:`<span class="stamp off">${esc(z)}</span>`).join("")}</div>
   ${S.redeemed?`<div class="redeemed">Gift collected. Your avatar card is printed.</div>`:`<svg class="qr" viewBox="0 0 21 21" role="img" aria-label="Visitor card QR for station staff">${qr(cardUrl(S))}</svg><p class="small muted num">${esc(S.badge)}</p>`}</div>
-  ${S.redeemed?"":`<button class="btn" id="go-redeem">Simulate staff scan</button>`}`);
+  ${simScan()}`);
+}
+// prototype stand-in for station staff scanning this card: pick any zone on the route, or Redeem
+function simScan(){
+  const opts=[...new Set([...route(),"Redeem"])].filter(z=>z!=="Reception"&&!(z==="Redeem"&&S.redeemed));
+  const def=opts.find(z=>!S.visited.includes(z))||opts[0];
+  return `<div class="simscan glass"><label class="small muted" for="f-sim">Prototype · simulate a staff scan at</label>
+  <div class="simrow"><select id="f-sim">${opts.map(z=>`<option value="${esc(z)}" ${z===def?"selected":""}>${S.visited.includes(z)?"✓ ":""}${esc(z)}</option>`).join("")}</select><button class="btn" id="go-simscan">Scan</button></div></div>`;
 }
 function meView(){
   const g=GROUPS[S.group],mins=Math.max(1,Math.round((Date.now()-S.started)/60000));
@@ -381,7 +392,11 @@ document.addEventListener("click",e=>{
     case"go-create":S.visited=["Reception"];S.started=Date.now();S.step="app";S.tab="route";render();toast("Twin created. Reception badge earned.");break;
     case"staff-scan":openScanner(onStaffScan,simStaffScan);break;
     case"go-save":{const on=S.saved.includes(S.zone);S.saved=on?S.saved.filter(z=>z!==S.zone):[...S.saved,S.zone];render();toast(on?"Removed from follow-up":"Saved for follow-up");break}
-    case"go-redeem":S.redeemed=true;render();toast("Gift collected");break;
+    case"go-simscan":{const z=$("f-sim").value;
+      if(z==="Redeem"){S.redeemed=true;if(route().includes("Redeem")&&!S.visited.includes("Redeem"))S.visited.push("Redeem");toast("Gift collected")}
+      else if(S.visited.includes(z))toast(`Already checked in at ${z}`);
+      else{S.visited.push(z);toast(`Checked in at ${z}`)}
+      render();break}
     case"go-offer":S.offerTaken=true;render();break;
     case"go-copy":{const url="https://twin.pttep.example/"+S.badge;Promise.resolve().then(()=>navigator.clipboard.writeText(url)).then(()=>toast("Link copied"),()=>toast(url));break}
     case"go-reset":Object.assign(S,{step:"scan",tab:"route",zone:null,consent:false,photo:null,visited:[],saved:[],redeemed:false,offerTaken:false});render();break;
