@@ -1,0 +1,571 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>PTTEP Booth Console</title>
+<script>document.body.dataset.app="staff"</script>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap">
+<style>
+/* Layout: prototype strip, then either the visitor web app (mobile column, bottom tabs) or the staff console (wide). Visitor app: liquid glass over PTTEP blues with stacked zone cards; console: white ground, square corners. PTTEP logo, Kanit, cyan accent. */
+:root{
+  --white:#FFFFFF; --mist:#F3F7FB; --sky:#E1EEF9; --navy:#001736; --ocean:#194776;
+  --ink:#001736; --ink-muted:rgba(0,23,54,0.68); --line:rgba(0,23,54,0.12); --line-strong:rgba(0,23,54,0.28);
+  --energy:#00DAFF; --accent:#194776; --hot:#B25E00; --warm:#194776; --cold:rgba(0,23,54,0.55);
+  --sans:"Kanit",system-ui,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{background:var(--mist);color:var(--ink);font-family:var(--sans);font-weight:300;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:20;background:var(--navy)}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--energy);outline-offset:2px}
+h1,h2,h3{font-weight:600;margin:0;text-wrap:balance}
+h1{font-size:22px;line-height:1.15}
+h2{font-size:18px;line-height:1.2}
+h3{font-size:15px;line-height:1.25}
+p{margin:0}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--ink-muted)}
+.small{font-size:12px}
+.label{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted);font-weight:400}
+
+
+/* ---------- visitor app: liquid glass over PTTEP blues, zones as stacked cards ---------- */
+.app{--glass:rgba(255,255,255,.44);--glass-edge:rgba(255,255,255,.72);--glass-sh:inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 0 rgba(255,255,255,.3),0 10px 30px rgba(0,23,54,.12);--sheen:linear-gradient(180deg,rgba(255,255,255,.3),rgba(255,255,255,0) 42%);--red:#ED1C24;
+  max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;isolation:isolate;
+  background:radial-gradient(70% 38% at 0% 0%,rgba(0,218,255,.38),transparent 70%),radial-gradient(60% 34% at 100% 22%,rgba(25,71,118,.3),transparent 70%),radial-gradient(80% 40% at 50% 100%,rgba(0,174,239,.3),transparent 70%),#EDF5FB}
+.glass{background:var(--glass);-webkit-backdrop-filter:blur(22px) saturate(180%);backdrop-filter:blur(22px) saturate(180%);border:1px solid var(--glass-edge);box-shadow:var(--glass-sh)}
+.app :focus-visible{outline:2px solid var(--red);outline-offset:3px}
+.appbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;display:flex;align-items:center;gap:10px;padding-block:12px 6px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.brand{display:flex;align-items:center;gap:8px;padding:4px 14px 4px 8px;border-radius:999px}
+.appbar .logo{height:30px;width:auto;display:block}
+.appbar .ev{font-size:11px;letter-spacing:.04em;color:var(--ink-muted);line-height:1.15}
+.appbar .me{margin-left:auto;width:44px;height:44px;border-radius:50%;padding:3px;cursor:pointer}
+.appbar .me img{width:100%;height:100%}
+.screen{flex:1;display:flex;flex-direction:column;gap:18px;padding-block:14px 24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.hero{font-size:40px;line-height:1;letter-spacing:-.02em;font-weight:600}
+.hero.xl{font-size:54px;line-height:.95}
+.lede{font-size:18px;font-weight:400;margin-top:-6px}
+.meta{font-size:13px;color:var(--ink-muted);margin-top:10px}
+.chip{align-self:flex-start;border-radius:999px;padding:5px 14px;font-size:12px;font-weight:400}
+.btn{display:block;width:100%;padding:13px 14px;background:var(--energy);color:var(--ink);border:0;font-weight:600;font-size:15px;cursor:pointer;text-align:center}
+.btn:disabled{background:var(--mist);color:var(--ink-muted);cursor:not-allowed}
+.btn.ghost{background:transparent;border:1px solid var(--line-strong);font-weight:400}
+.btn.sm{display:inline-block;width:auto;padding:8px 14px;font-size:14px;white-space:nowrap}
+.app .btn{border-radius:999px;background:var(--navy);color:var(--white);font-weight:400;padding:14px 20px;box-shadow:0 8px 20px rgba(0,23,54,.25)}
+.app .btn:disabled{background:rgba(255,255,255,.5);color:var(--ink-muted);box-shadow:none}
+.app .btn.ghost{background:var(--glass);color:var(--ink);border:1px solid var(--glass-edge);box-shadow:var(--glass-sh);-webkit-backdrop-filter:blur(22px);backdrop-filter:blur(22px)}
+.actions{position:sticky;bottom:0;padding-block:12px calc(16px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.tabbar{position:sticky;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:10;margin:0 16px 12px;border-radius:999px;display:grid;grid-template-columns:repeat(3,1fr);align-items:center;padding:6px}
+.tabbar button{background:none;border:0;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;cursor:pointer;color:var(--ink-muted);border-radius:999px}
+.tabbar button[aria-current="page"]{color:var(--ink);background:rgba(255,255,255,.7);font-weight:400}
+.tabbar svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.6}
+.tabbar .scan{justify-self:center;width:54px;height:54px;padding:0;border-radius:50%;background:var(--navy);color:var(--white);justify-content:center;box-shadow:0 0 0 4px rgba(0,218,255,.35),0 8px 18px rgba(0,23,54,.3)}
+.tabbar .scan svg{width:26px;height:26px}
+.panel-glass{border-radius:28px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field>label,.field>.lbl{font-size:13px;color:var(--ink-muted)}
+.field input[type=text]{background:rgba(255,255,255,.7);border:1px solid var(--glass-edge);border-radius:16px;padding:12px 14px;width:100%}
+.verified{display:flex;align-items:center;justify-content:space-between;gap:8px;background:rgba(255,255,255,.55);border-radius:16px;padding:10px 14px}
+.verified b{font-weight:400}
+.tick{color:var(--accent);font-size:13px;font-weight:400}
+.selfie{display:flex;gap:14px;align-items:center}
+.selfie input{position:absolute;opacity:0;width:1px;height:1px}
+.selfie label.up{background:rgba(255,255,255,.7);border:1px solid var(--glass-edge);border-radius:999px;padding:8px 16px;font-size:14px;cursor:pointer;display:inline-block}
+.selfie input:focus-visible+label.up{outline:2px solid var(--red);outline-offset:3px}
+.groups{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grp{background:var(--sheen),var(--c);color:var(--f);border:0;border-radius:22px;padding:14px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:2px;min-height:86px;position:relative;box-shadow:inset 0 1px 0 rgba(255,255,255,.5)}
+.grp b{font-weight:600;font-size:15px;line-height:1.15;padding-right:24px}
+.grp span{font-size:11px;opacity:.8}
+.grp[aria-pressed="true"]{box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 3px var(--white),0 0 0 5px var(--navy)}
+.grp[aria-pressed="true"]::after{content:"✓";position:absolute;top:10px;right:10px;width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.9);color:var(--navy);display:grid;place-items:center;font-size:12px}
+.consent{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--ink-muted)}
+.consent input{accent-color:var(--ocean);margin-top:4px;width:16px;height:16px;flex:none}
+
+.avatar{width:56px;height:56px;flex:none;background:var(--ocean);display:block;object-fit:cover;border-radius:50%}
+.avatar.lg{width:140px;height:140px;border-radius:36px}
+.hello{display:flex;gap:14px;align-items:center}
+.progress{height:8px;border-radius:999px;margin-top:8px;overflow:hidden;padding:0}
+.progress i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--ocean),var(--energy));transition:width .4s ease}
+.stack{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.stack li+li{margin-top:-28px}
+.zc{--c:#DCE3EA;--f:#33465C;width:100%;border:0;display:flex;align-items:flex-start;gap:12px;padding:18px 18px 46px;border-radius:30px;text-align:left;cursor:pointer;color:var(--f);background:var(--sheen),var(--c);box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 -8px 22px rgba(0,23,54,.14);font-size:20px;font-weight:600;line-height:1.2}
+.stack li:last-child .zc{padding-bottom:22px}
+.zc .n{font-size:12px;font-weight:400;opacity:.7;padding-top:5px;width:20px;flex:none}
+.zc .t{flex:1;min-width:0}
+.zc small{display:block;font-size:12px;font-weight:400;opacity:.8;margin-top:2px}
+.zc .go{width:36px;height:36px;flex:none;border-radius:50%;display:grid;place-items:center;font-size:16px;font-weight:400;background:rgba(255,255,255,.3);border:1px solid rgba(255,255,255,.6);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.zc:disabled{cursor:default}
+.zc.todo .go{opacity:.4}
+.zc small.badge{display:table;background:#17824A;color:#fff;opacity:1;border-radius:999px;padding:2px 10px;margin-top:6px}
+.zc.now small::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--red);margin-right:6px;vertical-align:1px;box-shadow:0 0 0 3px rgba(255,255,255,.6)}
+.deck{position:relative;padding-top:18px}
+.deck::before,.deck::after{content:"";position:absolute;top:0;left:18px;right:18px;height:48px;border-radius:26px 26px 0 0;background:var(--c3)}
+.deck::after{top:9px;left:9px;right:9px;background:var(--c2)}
+.panel{position:relative;z-index:1;background:var(--sheen),var(--c);color:var(--f);border-radius:30px;padding:20px 18px 14px;display:flex;flex-direction:column;gap:10px;box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 -6px 20px rgba(0,23,54,.14)}
+.panel .desc{font-size:16px;font-weight:400;margin-bottom:4px}
+.panel .item{background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.45);border-radius:16px;padding:11px 14px;font-size:14px;color:inherit;text-align:left;width:100%}
+.panel .save{display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-weight:400;min-height:60px}
+.panel .save[aria-pressed="true"]{background:rgba(255,255,255,.85);color:var(--navy)}
+.panel .foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:6px}
+.link{background:none;border:0;padding:8px 0;font-size:14px;color:inherit;cursor:pointer}
+.pill{background:rgba(255,255,255,.9);color:var(--navy);border:0;border-radius:999px;padding:9px 16px;font-size:14px;cursor:pointer;box-shadow:0 4px 12px rgba(0,23,54,.15)}
+.card{border-radius:32px;display:flex;flex-direction:column;align-items:center;gap:12px;padding:22px 16px;text-align:center}
+.card .logo{height:40px}
+.stamps{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.stamp{font-size:12px;border-radius:999px;background:var(--c);color:var(--f);padding:4px 10px;font-weight:400}
+.stamp.off{background:rgba(255,255,255,.5);color:var(--ink-muted);border:1px dashed var(--line-strong)}
+.qr{width:200px;height:200px;background:var(--white);border-radius:18px;padding:10px}
+.redeemed{background:rgba(255,255,255,.7);border-radius:16px;padding:12px;font-size:14px;width:100%}
+.rows{display:flex;flex-direction:column;border-radius:24px;padding:4px 18px}
+.rows div{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid rgba(0,23,54,.08);padding:12px 0;font-size:14px}
+.rows div:last-child{border-bottom:0}
+.rows span{color:var(--ink-muted)}
+.offer{border-radius:30px;padding:20px 18px;display:flex;flex-direction:column;gap:10px;background:var(--sheen),var(--c,rgba(255,255,255,.44));color:var(--f,var(--ink))}
+.offer .muted,.offer .label,.offer .tick{color:inherit;opacity:.85}
+.offer .btn{background:rgba(255,255,255,.92);color:var(--navy)}
+.toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:rgba(0,23,54,.82);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);color:var(--white);border-radius:999px;padding:10px 18px;font-size:14px;z-index:30;max-width:calc(100% - 32px)}
+
+/* ---------- staff console ---------- */
+.console{max-width:1280px;margin:0 auto;padding-block:0 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.c-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-block:14px;border-bottom:1px solid var(--line);margin-bottom:20px}
+.c-head .logo{height:40px}
+.c-head h1{font-size:20px}
+.live{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-muted)}
+.live i{width:8px;height:8px;background:var(--energy);display:block;animation:pulse 2s infinite}
+@keyframes pulse{50%{opacity:.3}}
+.c-tools{margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+select{background:var(--white);border:1px solid var(--line-strong);padding:7px 10px}
+.demo{font-size:11px;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--hot);color:var(--hot);padding:2px 8px;font-weight:400}
+.c-tabs{display:flex;border-bottom:1px solid var(--line);margin-bottom:20px}
+.c-tabs button{background:none;border:0;padding:10px 16px;cursor:pointer;font-size:14px;color:var(--ink-muted);border-bottom:2px solid transparent;margin-bottom:-1px}
+.c-tabs button[aria-current="page"]{color:var(--ink);border-bottom-color:var(--energy);font-weight:400}
+.tiles{display:grid;grid-template-columns:repeat(5,1fr);background:var(--white);border:1px solid var(--line)}
+@media (max-width:900px){.tiles{grid-template-columns:repeat(2,1fr)}}
+.tile{padding:16px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:4px}
+.tile:last-child{border-right:0}
+@media (max-width:900px){.tile{border-bottom:1px solid var(--line)}}
+.tile b{font-size:28px;font-weight:600;line-height:1.1}
+.tile .d{font-size:12px;color:var(--accent)}
+.box{background:var(--white);border:1px solid var(--line);padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.box-h{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.grid{display:grid;gap:20px;margin-top:20px}
+.g2{grid-template-columns:1.4fr 1fr}
+@media (max-width:960px){.g2{grid-template-columns:1fr}}
+.funnel{display:flex;flex-direction:column;gap:10px}
+.frow{display:grid;grid-template-columns:120px 1fr 48px;gap:12px;align-items:center;font-size:13px}
+.track{height:28px;background:var(--mist)}
+.fill{height:100%;background:var(--sky);border-right:2px solid var(--energy);display:flex;align-items:center;padding-left:10px;font-weight:400;transition:width .4s ease}
+.frow .rate{text-align:right;color:var(--accent)}
+.split{display:flex;flex-direction:column;gap:14px}
+.split .r{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:13px}
+.split .bar{grid-column:1/-1;height:6px;background:var(--mist)}
+.split .bar i{display:block;height:100%;background:var(--ocean)}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-weight:400;color:var(--ink-muted);font-size:12px;white-space:nowrap}
+.heat td.c{text-align:center;min-width:64px}
+.temp{font-size:11px;padding:2px 8px;border:1px solid;font-weight:400;text-transform:capitalize;white-space:nowrap}
+.temp.hot{color:var(--hot);border-color:var(--hot)}
+.temp.warm{color:var(--warm);border-color:var(--warm)}
+.temp.cold{color:var(--cold);border-color:var(--cold)}
+.lead-av{width:28px;height:28px;vertical-align:middle;margin-right:8px;display:inline-block}
+.viewfinder{position:relative;align-self:center;width:min(100%,300px);aspect-ratio:1;border-radius:40px;display:grid;place-items:center;overflow:hidden;background:radial-gradient(circle at 50% 40%,#194776,#001736);box-shadow:inset 0 0 0 1px rgba(255,255,255,.25),0 16px 40px rgba(0,23,54,.3)}
+.viewfinder .qr{width:56%;height:auto;outline:3px solid var(--energy);outline-offset:14px}
+.viewfinder i{position:absolute;left:14%;right:14%;top:16%;height:2px;background:var(--energy);box-shadow:0 0 14px 2px var(--energy);animation:scanline 2.4s ease-in-out infinite alternate}
+@keyframes scanline{to{top:84%}}
+.qrbox{align-items:center;text-align:center}
+.qrbox .qr{width:220px;height:220px;border:1px solid var(--line);padding:10px;background:var(--white)}
+.vh{position:absolute;opacity:0;width:1px;height:1px}
+.vh:focus-visible+label{outline:2px solid var(--energy);outline-offset:2px}
+.tabbar .scan[aria-current="page"]{background:var(--navy);color:var(--white);box-shadow:0 0 0 4px var(--energy),0 8px 18px rgba(0,23,54,.3)}
+.scanner{position:fixed;inset:0;z-index:40;background:#000;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--sans)}
+.scanner video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.scanner .vf{position:relative;width:min(70vw,280px);aspect-ratio:1;border:3px solid var(--energy);border-radius:32px;box-shadow:0 0 0 100vmax rgba(0,23,54,.55);overflow:hidden}
+.scanner .vf i{position:absolute;left:8%;right:8%;top:10%;height:2px;background:var(--energy);box-shadow:0 0 14px 2px var(--energy);animation:scanline 2.4s ease-in-out infinite alternate}
+.scanner .hint{position:relative;margin-top:20px;font-size:15px;text-align:center;padding:0 24px;max-width:420px}
+.scanner .bar{position:absolute;left:16px;right:16px;bottom:calc(24px + env(safe-area-inset-bottom,0px));display:flex;gap:8px;max-width:480px;margin:0 auto}
+.scanner .bar .btn{border-radius:999px;font-weight:400;padding:13px 8px;cursor:pointer}
+.scanner .btn.ghost{background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.4);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.scanner :focus-visible{outline:2px solid var(--energy);outline-offset:3px}
+.zqr{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px}
+.zqr div{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;font-size:13px}
+.zqr .qr{width:140px;height:140px;border:1px solid var(--line)}
+/* responsive: the phone layout is the base; tablets widen the column, desktop splits headline | content */
+.app{max-width:none}
+.appbar,.screen,.actions{width:100%;max-width:560px;margin-inline:auto}
+.lead,.main{display:flex;flex-direction:column;gap:18px;min-width:0}
+.tabbar{width:min(calc(100% - 32px),420px);margin:0 auto 12px}
+@media (hover:hover){.zc:not(:disabled):hover,.grp:hover,.app .btn:not(:disabled):hover{filter:brightness(1.08)}}
+@media (min-width:720px){
+  .appbar,.screen,.actions{max-width:720px}
+  .screen{padding-block:24px 40px}
+  .hero{font-size:52px}.hero.xl{font-size:68px}
+  .groups{grid-template-columns:repeat(4,1fr)}
+  .zc{font-size:22px;padding:22px 24px 50px}
+  .card{width:100%;max-width:440px;align-self:center}
+}
+@media (min-width:1024px){
+  .appbar,.screen,.actions{max-width:1160px}
+  .screen{display:grid;grid-template-columns:5fr 6fr;column-gap:64px;align-items:start;padding-block:40px 48px}
+  .lead{position:sticky;top:96px}
+  .actions{display:grid;grid-template-columns:5fr 6fr;column-gap:64px}
+  .actions .btn{grid-column:2}
+  .hero{font-size:60px}.hero.xl{font-size:80px}
+  .groups{grid-template-columns:1fr 1fr}
+  .card{max-width:480px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+
+
+<div id="view-staff" class="console">
+  <header class="c-head">
+    <img class="logo" id="logo" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOTEiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA5MSA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGcgaWQ9IlBUVEVQLWxvZ28iPgo8cGF0aCBpZD0iVmVjdG9yIiBkPSJNMjQuMjk0OSA3OS44MjRWNjguNzk1N0gxOC44NTc0VjY1LjM5NDVIMzQuMzAxNFY2OC43OTU3SDI4Ljg2MzlWNzkuODI0SDI0LjI5NDlaIiBmaWxsPSIjMUIxNDY0Ij48L3BhdGg+CjxwYXRoIGlkPSJWZWN0b3JfMiIgZD0iTTQzLjU4NjUgNzkuODI0VjY4Ljc5NTdIMzguMTU2MlY2NS4zOTQ1SDUzLjYwMDNWNjguNzk1N0g0OC4xNjI3Vjc5LjgyNEg0My41ODY1WiIgZmlsbD0iIzFCMTQ2NCI+PC9wYXRoPgo8cGF0aCBpZD0iVmVjdG9yXzMiIGQ9Ik0wLjkxNzk2OSA3OS44MjRWNjUuMzk0NUgxMS4yNzQ4QzEyLjY2MTUgNjUuMzk0NSAxMy44ODc3IDY1Ljg0NyAxNC44NDM4IDY2Ljc1MjFDMTUuODA3MyA2Ny42NDk4IDE2LjI5NjMgNjguODYxNCAxNi4yOTYzIDcwLjI0MDlDMTYuMjk2MyA3MS42MjAzIDE1LjgwNzMgNzIuODMxOSAxNC44NDM4IDczLjczNjlDMTMuODg3NyA3NC42NDkzIDEyLjY2MTUgNzUuMTE2NCAxMS4yNzQ4IDc1LjEwOTFINS40ODY5NFY3OS44MzEzSDAuOTE3OTY5Vjc5LjgyNFpNNS40ODY5NCA3MS43MDA2SDExLjI3NDhDMTEuNzkzIDcxLjcwMDYgMTIuMDYzMSA3MS41NjkyIDEyLjI0NTUgNzEuMzc5NUMxMi40MjggNzEuMTgyNCAxMi41NjY3IDcwLjgzMjEgMTIuNTY2NyA3MC4yNDA5QzEyLjU2NjcgNjkuNjY0MyAxMi40MjggNjkuMzIxMiAxMi4yNTI4IDY5LjEyNDJDMTIuMDcwNCA2OC45MzQ0IDExLjc5MyA2OC44MTAzIDExLjI4MjEgNjguODAzSDUuNDk0MjRWNzEuNzAwNkg1LjQ4Njk0WiIgZmlsbD0iIzFCMTQ2NCI+PC9wYXRoPgo8cGF0aCBpZD0iVmVjdG9yXzQiIGQ9Ik03NS41MzEyIDc5LjgyNFY2NS4zOTQ1SDg1Ljg5NTRDODcuMjgyMSA2NS4zOTQ1IDg4LjUwODMgNjUuODQ3IDg5LjQ2NDQgNjYuNzUyMUM5MC40Mjc5IDY3LjY0OTggOTAuOTE2OSA2OC44NjE0IDkwLjkxNjkgNzAuMjQwOUM5MC45MTY5IDcxLjYyMDMgOTAuNDI3OSA3Mi44MzE5IDg5LjQ2NDQgNzMuNzM2OUM4OC41MDgzIDc0LjY0OTMgODcuMjgyMSA3NS4xMTY0IDg1Ljg5NTQgNzUuMTA5MUg4MC4xMDc1Vjc5LjgzMTNINzUuNTM4Nkw3NS41MzEyIDc5LjgyNFpNODAuMTAwMiA3MS43MDA2SDg1Ljg4ODFDODYuMzk5IDcxLjcwMDYgODYuNjc2MyA3MS41NjkyIDg2Ljg1ODggNzEuMzc5NUM4Ny4wNDEzIDcxLjE4MjQgODcuMTcyNyA3MC44MzIxIDg3LjE3MjcgNzAuMjQwOUM4Ny4xNzI3IDY5LjY2NDMgODcuMDQxMyA2OS4zMjEyIDg2Ljg1ODggNjkuMTI0MkM4Ni42NzYzIDY4LjkzNDQgODYuMzk5IDY4LjgxMDMgODUuODg4MSA2OC44MDNIODAuMTAwMlY3MS43MDA2WiIgZmlsbD0iIzFCMTQ2NCI+PC9wYXRoPgo8cGF0aCBpZD0iVmVjdG9yXzUiIGQ9Ik02My44NjggNzkuODIzNUM2Mi4xMTY0IDc5LjgyMzUgNjAuMzU3NCA3OS4zNzEgNTkuMTE2NiA3OC4yOTgxQzU4LjEzODYgNzcuNDM2OCA1Ny41NTQ3IDc2LjAyODIgNTcuNTU0NyA3NC41ODMxVjY1LjM4NjdINzIuMzQ5MUw3MS4wMTM1IDY4Ljc4NzlINjIuMDE0MlY3MC43MDc1SDcwLjI0NzFMNjguOTY5OCA3My45MzM1SDYyLjAxNDJWNzQuNTgzMUM2Mi4wMjg4IDc1LjE4ODggNjIuMTM4MyA3NS40OTU0IDYyLjU2ODkgNzUuODQ1N0M2My4wMzYgNzYuMjEwNyA2My41Njg4IDc2LjQwNzcgNjQuNDY2NSA3Ni40MTVINzIuMDcxOFY3OS44MjM1SDYzLjg3NTNINjMuODY4WiIgZmlsbD0iIzFCMTQ2NCI+PC9wYXRoPgo8cGF0aCBpZD0iVmVjdG9yXzYiIGQ9Ik01NS40NTM3IDMxLjY4MTNDNTIuOTUwMyAyOS4yODAxIDQ5Ljg2MjkgMjUuNDkyMSA0OC42MzY3IDIzLjQ5OTVDNDYuNDYxNyAxOS45MjMyIDQ1LjkwNyAxNi44MDY2IDQ1LjkwNyAxNi44MDY2QzQ1LjkwNyAxNi44MDY2IDQ1LjMzMDQgMTkuOTM3OCA0My4xMzM1IDIzLjQ5OTVDNDEuMDY4IDI2Ljg1NjkgMzcuNDI2IDMwLjYxNTcgMzYuMjI5IDMxLjgyQzMzLjc0NzQgMzQuMjk0MyAzMi4yMTQ3IDM3LjcxNzQgMzIuMjE0NyA0MS40OTgxQzMyLjIxNDcgNDkuMDU5NSAzOC4zNDU2IDU1LjE5MDQgNDUuOTA3IDU1LjE5MDRDNTMuNDY4NSA1NS4xOTA0IDU5LjU5OTQgNDkuMDU5NSA1OS41OTk0IDQxLjQ5ODFDNTkuNTk5NCAzNy42NDQ0IDU4LjAzMDEgMzQuMTU1NiA1NS40NTM3IDMxLjY4MTNaTTQ1LjkwNyA1Mi42ODY5QzM5LjczMjQgNTIuNjg2OSAzNC43MTgyIDQ3LjY3MjggMzQuNzE4MiA0MS40OTgxQzM0LjcxODIgMzUuMzIzNCAzOS43MzI0IDMwLjMwOTIgNDUuOTA3IDMwLjMwOTJDNTIuMDgxNyAzMC4zMDkyIDU3LjA5NTkgMzUuMzE2MSA1Ny4wOTU5IDQxLjQ5ODFDNTcuMDk1OSA0Ny42ODAxIDUyLjA4OSA1Mi42ODY5IDQ1LjkwNyA1Mi42ODY5WiIgZmlsbD0iIzFCMTQ2NCI+PC9wYXRoPgo8cGF0aCBpZD0iVmVjdG9yXzciIGQ9Ik01Ny4wOTY1IDQxLjQ5NzVDNTcuMDk2NSA0Ny42Nzk1IDUyLjA4OTYgNTIuNjg2MyA0NS45MDc2IDUyLjY4NjNDMzkuNzI1NiA1Mi42ODYzIDM0LjcxODggNDcuNjcyMiAzNC43MTg4IDQxLjQ5NzVDMzQuNzE4OCAzNS4zMjI4IDM5LjczMjkgMzAuMzA4NiA0NS45MDc2IDMwLjMwODZDNTIuMDgyMyAzMC4zMDg2IDU3LjA5NjUgMzUuMzE1NSA1Ny4wOTY1IDQxLjQ5NzVaIiBmaWxsPSIjRUQxQzI0Ij48L3BhdGg+CjxwYXRoIGlkPSJWZWN0b3JfOCIgZD0iTTUwLjk1NzUgMC4zNTU0NjlDNDguMzk1NyA2LjUzNzQ1IDQ2LjkyODcgMTAuMjQ1MiA0Ny40MTc3IDE1LjUxNDhDNDcuOTQzMiAyMS4xMjc1IDUxLjc2NzcgMjUuNjM4MSA1NS4yNzExIDI5LjQwNDJDNTguMTAyOSAzMi40NDA1IDU5LjgxMDggMzQuMzYgNjAuNTkxOCAzNy44NDg4QzYxLjEzOTIgNDAuMjY0NiA2MS43NjY5IDQ1LjM4ODMgNTguMTMyMSA1MC4zMDc2QzUzLjc4OTQgNTYuMTk3NyA0Ni43NzU0IDU2LjQwOTMgNDYuNzc1NCA1Ni40MDkzVjU4LjE4MjlDNDYuNzc1NCA1OC4xODI5IDU1LjEzMjQgNTcuODQ3MiA2MC44MjUzIDUyLjY4N0M2NC43NTIgNDkuMTE3OSA2Ni4xNDYxIDQ2LjAwODcgNjcuMTc1MiA0MS4yMDYyQzY4LjA1MSAzNy4xMTg5IDY3IDMxLjMwMTkgNjQuNDUyOCAyNi44Mjc4QzYzLjAyMjMgMjQuMzA5NyA2MS40NTMgMjIuMjE1IDU5Ljk0OTUgMjAuNDcwNkM1Ni45Nzg5IDE3LjAxODQgNTQuODU1IDE0LjcxMiA1Mi45NzIgMTEuOTUzMUM1MS4yMjc2IDkuNDA1ODMgNTAuMTQ3NCA3LjI0NTQyIDUwLjE0NzQgNS4wMDQ3M0M1MC4xNDc0IDIuNzY0MDMgNTEuMDIzMiAwLjUzNzkzNiA1MS4wMjMyIDAuNTM3OTM2TDUwLjk2NDggMC4zNTU0NjlINTAuOTU3NVoiIGZpbGw9IiMwMEFFRUYiPjwvcGF0aD4KPHBhdGggaWQ9IlZlY3Rvcl85IiBkPSJNNDAuODQ4MiAwLjM1NTQ2OUM0My40MTczIDYuNTM3NDUgNDQuODg0NCAxMC4yNDUyIDQ0LjM4ODEgMTUuNTE0OEM0My44Njk4IDIxLjEyNzUgNDAuMDQ1MyAyNS42MzgxIDM2LjUzNDcgMjkuNDA0MkMzMy43MTAxIDMyLjQ0MDUgMzEuOTk0OSAzNC4zNiAzMS4yMTM5IDM3Ljg0ODhDMzAuNjY2NSA0MC4yNjQ2IDMwLjA0NjEgNDUuMzg4MyAzMy42NzM2IDUwLjMwNzZDMzguMDE2MyA1Ni4xOTc3IDQ1LjAzMDMgNTYuNDA5MyA0NS4wMzAzIDU2LjQwOTNWNTguMTgyOUM0NS4wMzAzIDU4LjE4MjkgMzYuNjY2MSA1Ny44NDcyIDMwLjk4NzcgNTIuNjg3QzI3LjA1MzcgNDkuMTE3OSAyNS42NTk2IDQ2LjAwODcgMjQuNjM3OCA0MS4yMDYyQzIzLjc2MiAzNy4xMTg5IDI0LjgxMyAzMS4zMDE5IDI3LjM2MDIgMjYuODI3OEMyOC43OTA4IDI0LjMwOTcgMzAuMzY3MyAyMi4yMTUgMzEuODYzNSAyMC40NzA2QzM0LjgzNDEgMTcuMDE4NCAzNi45NTggMTQuNzEyIDM4Ljg0MTEgMTEuOTUzMUM0MC41ODU0IDkuNDA1ODMgNDEuNjY1NiA3LjI0NTQyIDQxLjY2NTYgNS4wMDQ3M0M0MS42NjU2IDIuNzY0MDMgNDAuNzk3MSAwLjUzNzkzNiA0MC43OTcxIDAuNTM3OTM2TDQwLjg0ODIgMC4zNTU0NjlaIiBmaWxsPSIjMDBBRUVGIj48L3BhdGg+CjxnIGlkPSJDbGlwIHBhdGggZ3JvdXAiPgo8bWFzayBpZD0ibWFzazBfNjc3MF8xMjYzNiIgc3R5bGU9Im1hc2stdHlwZTpsdW1pbmFuY2UiIG1hc2tVbml0cz0idXNlclNwYWNlT25Vc2UiIHg9IjM0IiB5PSIzMCIgd2lkdGg9IjI0IiBoZWlnaHQ9IjIzIj4KPGcgaWQ9ImNsaXBwYXRoIj4KPHBhdGggaWQ9IlZlY3Rvcl8xMCIgZD0iTTU3LjA5NjUgNDEuNDk3NUM1Ny4wOTY1IDQ3LjY3OTUgNTIuMDg5NiA1Mi42ODYzIDQ1LjkwNzYgNTIuNjg2M0MzOS43MjU2IDUyLjY4NjMgMzQuNzE4OCA0Ny42NzIyIDM0LjcxODggNDEuNDk3NUMzNC43MTg4IDM1LjMyMjggMzkuNzMyOSAzMC4zMDg2IDQ1LjkwNzYgMzAuMzA4NkM1Mi4wODIzIDMwLjMwODYgNTcuMDk2NSAzNS4zMTU1IDU3LjA5NjUgNDEuNDk3NVoiIGZpbGw9IndoaXRlIj48L3BhdGg+CjwvZz4KPC9tYXNrPgo8ZyBtYXNrPSJ1cmwoI21hc2swXzY3NzBfMTI2MzYpIj4KPGcgaWQ9Ikdyb3VwIj4KPHBhdGggaWQ9IlZlY3Rvcl8xMSIgZD0iTTUyLjk0MjkgNDkuMTcwMkg1MS43NzUyVjUyLjI3OTRINDkuNjUxMlY0OS4xNzAySDQyLjE1NTVWNTIuMjc5NEg0MC4wMzg5VjQ5LjE3MDJIMzguODcxMVY0Ny4xNDg0SDUyLjk0MjlWNDkuMTcwMloiIGZpbGw9IndoaXRlIj48L3BhdGg+CjxwYXRoIGlkPSJWZWN0b3JfMTIiIGQ9Ik00Mi4yNSA0MS4xNTM0VjQwLjMzNTlINDkuNTU2VjQxLjE1MzRINDIuMjVaIiBmaWxsPSJ3aGl0ZSI+PC9wYXRoPgo8cGF0aCBpZD0iVmVjdG9yXzEzIiBkPSJNNDAuOTgxNCA0OC44MTc4SDQwLjU1MDhWNDguNzgxNEw0My43MDM4IDI5Ljk3MjdMNDQuNTE0IDMwLjEwNEw0MS4zNjgyIDQ4Ljg4MzVMNDAuOTgxNCA0OC44MTc4WiIgZmlsbD0id2hpdGUiPjwvcGF0aD4KPHBhdGggaWQ9IlZlY3Rvcl8xNCIgZD0iTTQ3LjMwMDggMzAuMTA0TDQ4LjExMDkgMjkuOTcyN0w1MS4yNTY3IDQ4Ljc4MTRWNDguODE3OEg1MC44MjZMNTAuNDQ2NSA0OC44ODM1TDQ3LjMwMDggMzAuMTA0WiIgZmlsbD0id2hpdGUiPjwvcGF0aD4KPHBhdGggaWQ9IlZlY3Rvcl8xNSIgZD0iTTQyLjkwNzIgMzQuMzIzM0w0NS43OTAyIDI5LjczMjRMNDYuNDYxNiAzMC4xNTU3TDQzLjU3ODcgMzQuNzQ2Nkw0Mi44OTI2IDM0LjMwODdMNDIuOTA3MiAzNC4zMjMzWiIgZmlsbD0id2hpdGUiPjwvcGF0aD4KPHBhdGggaWQ9IlZlY3Rvcl8xNiIgZD0iTTQ4LjkwMDIgMzQuMzIzM0w0Ni4wMjQ1IDI5LjczMjRMNDUuMzQ1NyAzMC4xNTU3TDQ4LjIyODcgMzQuNzQ2Nkw0OC45MjIxIDM0LjMwODdMNDguOTAwMiAzNC4zMjMzWiIgZmlsbD0id2hpdGUiPjwvcGF0aD4KPHBhdGggaWQ9IlZlY3Rvcl8xNyIgZD0iTTQ1LjM0NTcgMzUuNjA4M0w0Ni4wMjQ1IDM1LjE0ODRMNDkuNjE1NCA0MC40MzI3TDQ4Ljk0NCA0MC44ODUyTDQ1LjM0NTcgMzUuNjA4M1oiIGZpbGw9IndoaXRlIj48L3BhdGg+CjxwYXRoIGlkPSJWZWN0b3JfMTgiIGQ9Ik00Ni40Njg0IDM1LjYwODNMNDUuNzg5NyAzNS4xNDg0TDQyLjE5MTQgNDAuNDMyN0w0Mi44NzAyIDQwLjg4NTJMNDYuNDY4NCAzNS42MDgzWiIgZmlsbD0id2hpdGUiPjwvcGF0aD4KPHBhdGggaWQ9IlZlY3Rvcl8xOSIgZD0iTTQwLjgwNDcgNDcuNTc3OUw0NS44MDQzIDQwLjUyNzNMNDYuNDY4NSA0MS4wMDE4TDQxLjQ3NjIgNDguMDUyM0w0MC44MDQ3IDQ3LjU3NzlaIiBmaWxsPSJ3aGl0ZSI+PC9wYXRoPgo8cGF0aCBpZD0iVmVjdG9yXzIwIiBkPSJNNDUuMzQ1NyA0MS4wMDE4TDQ2LjAwOTkgNDAuNTI3M0w1MS4wMDIyIDQ3LjU3NzlMNTAuMzM4IDQ4LjA1MjNMNDUuMzQ1NyA0MS4wMDE4WiIgZmlsbD0id2hpdGUiPjwvcGF0aD4KPHBhdGggaWQ9IlZlY3Rvcl8yMSIgZD0iTTUwLjQ3NjEgMzMuOTA2Mkg0MS4zMzgxVjM1Ljc1MjhINTAuNDc2MVYzMy45MDYyWiIgZmlsbD0id2hpdGUiPjwvcGF0aD4KPC9nPgo8L2c+CjwvZz4KPHBhdGggaWQ9IlZlY3Rvcl8yMiIgZD0iTTQ4Ljk4NyAzMC40MTk1SDQyLjkyMThWMjguNzQwOEg0NC41MzQ4TDQ0LjkyODkgMjYuNjY4SDQ2Ljk4NzFMNDcuMzgxMiAyOC43NDA4SDQ4Ljk4N1YzMC40MTk1WiIgZmlsbD0id2hpdGUiPjwvcGF0aD4KPHBhdGggaWQ9IlZlY3Rvcl8yMyIgZD0iTTQ0LjQzMzUgMzAuNTU2Nkw0NC41MTM4IDMwLjEwNEw0My43MDM2IDI5Ljk3MjdMNDMuNTcyMyAzMC43MzE3TDQ0LjQzMzUgMzAuNTU2NloiIGZpbGw9IndoaXRlIj48L3BhdGg+CjxwYXRoIGlkPSJWZWN0b3JfMjQiIGQ9Ik00Ny4zODExIDMwLjU1NjZMNDcuMzAwOCAzMC4xMDRMNDguMTEwOSAyOS45NzI3TDQ4LjIzNSAzMC43MzE3TDQ3LjM4MTEgMzAuNTU2NloiIGZpbGw9IndoaXRlIj48L3BhdGg+CjwvZz4KPC9zdmc+" alt="PTTEP">
+    <h1>Booth Console</h1>
+    <span class="live"><i></i>Live · Day 2, 25 Mar 2027</span>
+    <div class="c-tools">
+      <span class="demo">Demo data</span>
+      <label class="small muted" for="f-group">Group</label>
+      <select id="f-group"></select>
+    </div>
+  </header>
+  <nav class="c-tabs" id="c-tabs"></nav>
+  <section id="c-body"></section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<script>
+const APP=document.body.dataset.app;
+const GROUPS={
+  dm:{name:"Decision Makers",th:"ผู้บริหาร / นักลงทุน",route:["Reception","Worldwide Operation","Immersive Room","LED / Digital X","Discussion / EP Cafe","Meeting Room"],offer:"Meet a PTTEP executive",offerSub:"Pick a 30-minute slot in the Meeting Room today or tomorrow.",cta:"Book a meeting",view:"Partnership view"},
+  gov:{name:"Government & Regulators",th:"หน่วยงานรัฐ / ผู้กำกับดูแล",route:["Reception","Worldwide Operation","Immersive Room","M&I + R&D","Low BTU / Wellhead","EP Forum","Meeting Room"],offer:"Get the policy briefing",offerSub:"Decommissioning and emissions briefing pack, sent to your badge email.",cta:"Request briefing",view:"Policy view"},
+  tech:{name:"Technical Experts",th:"วิศวกร / ผู้เชี่ยวชาญเทคนิค",route:["Reception","LED / Digital X","M&I + R&D","Low BTU / Wellhead","EP Forum","Discussion / EP Cafe"],offer:"Low BTU Flare technical paper",offerSub:"Download the paper and get an introduction to the engineering team.",cta:"Request paper",view:"Technical view"},
+  talent:{name:"Future Talent & Academia",th:"นักศึกษา / นักวิจัย / คนรุ่นใหม่",route:["Reception","Immersive Room","Worldwide Operation","LED / Digital X","EP Forum","Redeem"],offer:"Join the PTTEP talent pool",offerSub:"Get internship and graduate programme alerts.",cta:"Join talent pool",view:"Careers view"}
+};
+// Demo zone content; replace with the real booth copy
+const ZONES={
+  "Reception":{d:"Your twin was created here.",i:["Badge verified","Avatar generated","Route set for your group"]},
+  "Worldwide Operation":{d:"PTTEP projects around the world, with South-East Asia in focus.",i:["Producing assets across South-East Asia","Exploration in the Middle East and Africa","Gas supply for Thailand's energy security"]},
+  "Immersive Room":{d:"Energy Security for All Walks of Life.",i:["Room-scale show","A new session starts every few minutes"]},
+  "LED / Digital X":{d:"PTTEP digital operations on the X screen.",i:["Remote operations","AI-assisted drilling and production","Digital twins of offshore platforms"]},
+  "M&I + R&D":{d:"Predictive analytics and decommissioning research.",i:["Touch pillar with the oil and gas field map","Predictive maintenance models","Decommissioning: cost, timeline, sustainability, ecosystem"]},
+  "Low BTU / Wellhead":{d:"Reusing platforms and burning low-energy gas cleanly.",i:["Total Wellhead Platform Reuse: operation, technical, sustainability","Low BTU Flare: how it works, with live data"]},
+  "EP Forum":{d:"Short talks from PTTEP engineers and leaders.",i:["14:00 Offshore decommissioning","15:00 Carbon capture and storage","16:00 Careers in upstream energy"]},
+  "Discussion / EP Cafe":{d:"Sit down with PTTEP specialists.",i:["Coffee on us","Ask for an engineer by topic"]},
+  "Meeting Room":{d:"Private meetings with PTTEP.",i:["Book from the app","Your twin shares your interests with the host"]},
+  "Redeem":{d:"Collect your gift and avatar card.",i:["Show the code on your card","While stocks last"]}
+};
+const ICON={
+  route:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5"/></svg>',
+  card:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18"/><circle cx="12" cy="10" r="3"/><path d="M7.5 18c1-2.5 2.6-3.5 4.5-3.5s3.5 1 4.5 3.5"/></svg>',
+  me:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>',
+  scan:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V5h4M16 5h4v4M20 15v4h-4M8 19H4v-4M7 12h10"/></svg>',
+  share:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M8 8l4-4 4 4M6 13v6h12v-6"/></svg>'
+};
+// Sample visitor so the app opens in a working state
+const S={step:"scan",tab:"route",zone:null,name:"Nattaya Srisuk",company:"Siam Offshore Engineering",title:"Senior Reservoir Engineer",badge:"IPTC27-048213",group:"tech",consent:false,photo:null,visited:[],saved:[],redeemed:false,offerTaken:false,started:Date.now()};
+const $=id=>document.getElementById(id);
+const LOGO=$("logo").src;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const route=()=>GROUPS[S.group].route;
+const nextZone=()=>route().find(z=>!S.visited.includes(z));
+
+function avatarSrc(name=S.name,photo=S.photo){
+  if(photo)return photo;
+  const ini=name.trim().split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase()||"?";
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rect width="120" height="120" fill="#E1EEF9"/><circle cx="60" cy="46" r="22" fill="#194776"/><path d="M20 120c4-28 20-40 40-40s36 12 40 40z" fill="#194776"/><path d="M0 96 L120 72" stroke="#00DAFF" stroke-width="2"/><text x="60" y="53" text-anchor="middle" font-family="Kanit,sans-serif" font-size="18" font-weight="600" fill="#fff">${esc(ini)}</text></svg>`;
+  return "data:image/svg+xml,"+encodeURIComponent(svg);
+}
+function toast(msg){const t=document.createElement("div");t.className="toast";t.setAttribute("role","status");t.textContent=msg;document.body.append(t);setTimeout(()=>t.remove(),2200)}
+
+// PTTEP blues, darkest to lightest; card j in a route takes tone j
+const PAL=[["#001736","#fff"],["#194776","#fff"],["#1F6FB2","#fff"],["#00AEEF","#001736"],["#62D2F6","#001736"],["#A9E5F8","#001736"],["#D6F2FB","#001736"]];
+const pc=i=>PAL[((i%PAL.length)+PAL.length)%PAL.length];
+const tone=i=>`--c:${pc(i)[0]};--f:${pc(i)[1]}`;
+const zi=z=>Math.max(0,route().indexOf(z));
+
+const cols=(lead,main)=>`<div class="lead">${lead}</div><div class="main">${main}</div>`;
+function render(){
+  let body="",bottom="";
+  $("me").hidden=S.step!=="app";$("me-av").src=avatarSrc();
+  if(S.step==="scan"){
+    body=cols(`<h1 class="hero xl">Scan to open your twin</h1><p class="lede">Our booth staff have already created your profile.</p>`,`
+    <div class="viewfinder" aria-hidden="true"><svg class="qr" viewBox="0 0 21 21">${qr("PTTEP-DEMO")}</svg><i></i></div>
+    <p class="small muted" style="text-align:center">Point your phone camera at the QR code on the booth screen.</p>`);
+    bottom=`<div class="actions"><button class="btn" id="go-scan">Scan QR code →</button></div>`;
+  }else if(S.step==="profile"){
+    // read-only page a card QR opens (e.g. staff scanning with a normal phone camera)
+    const g=GROUPS[S.group];
+    body=cols(`<span class="chip glass">PTTEP Digital Twin profile</span><h1 class="hero xl">${esc(S.name)}</h1><p class="lede">${esc([S.title,S.company].filter(Boolean).join(" · "))}</p>`,
+    `<div class="card glass"><img class="logo" src="${LOGO}" alt="PTTEP"><img class="avatar lg" src="${avatarSrc()}" alt=""><div><h2>${esc(S.name)}</h2><p class="small muted">${g.name}</p></div>
+    <div class="rows" style="width:100%;text-align:left"><div><span>Profile ID</span><b class="num">${esc(S.badge)}</b></div><div><span>Company</span><b>${esc(S.company||"–")}</b></div><div><span>Job title</span><b>${esc(S.title||"–")}</b></div><div><span>Group</span><b>${g.name}</b></div></div></div>`);
+  }else if(S.step==="create"){
+    body=cols(`<span class="chip glass">✓ Profile from booth staff</span><h1 class="hero xl">Welcome, ${esc(S.name.split(" ")[0])}</h1><p class="lede">Check your details, add a selfie, and you're in.</p>`,`
+    <div class="panel-glass glass">
+      <div class="verified"><div><span class="small muted">${esc(S.company)}</span><br><b>${esc(S.title)}</b></div><span class="tick num">${esc(S.badge)}</span></div>
+      <div class="field"><label for="f-name">Display name</label><input type="text" id="f-name" value="${esc(S.name)}" maxlength="24" autocomplete="nickname"></div>
+      <div class="selfie"><img class="avatar" id="av" src="${avatarSrc()}" alt="Avatar preview"><div><input type="file" id="f-photo" accept="image/*"><label class="up" for="f-photo">${S.photo?"Retake selfie":"Take a selfie"}</label></div></div>
+    </div>
+    <div class="field"><span class="lbl">I am a · matched from your job title</span><div class="groups">${Object.entries(GROUPS).map(([k,v],j)=>`<button class="grp" style="${tone([0,1,3,5][j])}" data-g="${k}" aria-pressed="${S.group===k}"><b>${v.name}</b><span>${v.th}</span></button>`).join("")}</div></div>
+    <label class="consent" for="f-consent"><input type="checkbox" id="f-consent" ${S.consent?"checked":""}><span>I agree that PTTEP may record my zone visits and contact details to send me my visit summary.</span></label>`);
+    bottom=`<div class="actions"><button class="btn" id="go-create" ${S.consent&&S.name.trim()?"":"disabled"}>Enter my twin →</button></div>`;
+  }else{
+    body=S.tab==="card"?cardView():S.tab==="me"?meView():S.zone?zoneView():routeView();
+    const nz=nextZone(),tab=(k,n)=>`<button data-tab="${k}" ${S.tab===k?'aria-current="page"':""}>${ICON[k]}<span>${n}</span></button>`;
+    bottom=`<nav class="tabbar glass" aria-label="App">${tab("route","Route")}<button class="scan" data-tab="card" aria-label="My card" ${S.tab==="card"?'aria-current="page"':""}>${ICON.card}</button>${tab("me","Summary")}</nav>`;
+  }
+  $("screen").innerHTML=body;$("bottom").innerHTML=bottom;
+}
+function routeView(){
+  const g=GROUPS[S.group],nz=nextZone(),n=S.visited.length,tot=route().length;
+  return cols(`<span class="chip glass">${g.name}</span>
+  <div><h1 class="hero">Hi ${esc(S.name.split(" ")[0])},<br>${nz?"where next?":"route complete!"}</h1>
+  <p class="meta"><span class="num">${n} of ${tot}</span> zones${nz?` · next stop ${esc(nz)}`:""}</p><div class="progress glass"><i style="width:${n/tot*100}%"></i></div></div>
+  ${nz?"":`<div class="offer glass"><span class="label">Route complete</span><h2>Collect your gift</h2><p class="small muted">Show your card to staff at the Redeem counter.</p><button class="btn" data-tab="card">Open my card →</button></div>`}`,`
+  <ol class="stack">${route().map((z,j)=>{const st=S.visited.includes(z)?"done":z===nz?"now":"todo";
+    const attr=st==="done"?`data-zone="${esc(z)}"`:st==="now"?'data-tab="card"':"disabled";
+    const tag=st==="done"?`<small class="badge">✓ Visited${S.saved.includes(z)?" · ★ Saved":""}</small>`:st==="now"?"<small>Next · show your card to staff</small>":"";
+    // only scanned zones take their colour; the rest stay grey
+    return `<li><button class="zc ${st}" ${st==="done"?`style="${tone(j)}"`:""} ${attr}><span class="n num">${String(j+1).padStart(2,"0")}</span><span class="t">${esc(z)}${tag}</span><span class="go" aria-hidden="true">↗</span></button></li>`}).join("")}</ol>`);
+}
+function zoneView(){
+  const z=ZONES[S.zone],g=GROUPS[S.group],j=zi(S.zone),nz=nextZone(),saved=S.saved.includes(S.zone);
+  return cols(`<span class="chip glass">${g.view}</span><h1 class="hero">${esc(S.zone)}</h1>`,`
+  <div class="deck" style="${tone(j)};--c2:${pc(j+1)[0]};--c3:${pc(j+2)[0]}"><div class="panel">
+    <p class="desc">${esc(z.d)}</p>
+    ${z.i.map(x=>`<div class="item">${esc(x)}</div>`).join("")}
+    <button class="item save" id="go-save" aria-pressed="${saved}"><span>${saved?"★ Saved for follow-up":"☆ Save for follow-up"}</span><span>${saved?"Remove":"+"}</span></button>
+    <div class="foot"><button class="link" data-zone="">← Back to route</button>${nz?`<button class="pill" data-tab="card">Show my card →</button>`:`<button class="pill" data-tab="card">My card →</button>`}</div>
+  </div></div>
+  <p class="small muted">Saved topics appear in your summary and email, and a PTTEP specialist on this topic will follow up.</p>`);
+}
+function cardView(){
+  const g=GROUPS[S.group];
+  return cols(`<h1 class="hero">Your avatar card</h1><p class="lede">Show this to staff at each station to check in.</p>`,`
+  <div class="card glass"><img class="logo" src="${LOGO}" alt="PTTEP"><img class="avatar lg" src="${avatarSrc()}" alt="Your avatar"><div><h2>${esc(S.name)}</h2><p class="small muted">${g.name}</p></div>
+  <div class="stamps">${route().map((z,j)=>S.visited.includes(z)?`<span class="stamp" style="${tone(j)}">${esc(z)}</span>`:`<span class="stamp off">${esc(z)}</span>`).join("")}</div>
+  ${S.redeemed?`<div class="redeemed">Gift collected. Your avatar card is printed.</div>`:`<svg class="qr" viewBox="0 0 21 21" role="img" aria-label="Visitor card QR for station staff">${qr(cardUrl(S))}</svg><p class="small muted num">${esc(S.badge)}</p>`}</div>
+  ${S.redeemed?"":`<button class="btn" id="go-redeem">Simulate staff scan</button>`}`);
+}
+function meView(){
+  const g=GROUPS[S.group],mins=Math.max(1,Math.round((Date.now()-S.started)/60000));
+  return cols(`<div class="hello"><img class="avatar" src="${avatarSrc()}" alt=""><div><h1 class="hero" style="font-size:32px">${esc(S.name)}</h1><p class="small muted">${g.name}</p></div></div>
+  <div class="rows glass"><div><span>Zones visited</span><b class="num">${S.visited.length} / ${route().length}</b></div><div><span>Time at booth</span><b class="num">${mins} min</b></div><div><span>Content viewed</span><b class="num">${S.visited.reduce((n,z)=>n+ZONES[z].i.length,0)} items</b></div><div><span>Gift</span><b>${S.redeemed?"Collected":"Not yet"}</b></div></div>`,`
+  <div><h3 style="margin-bottom:10px">Saved for follow-up</h3>${S.saved.length?`<ol class="stack">${S.saved.map(z=>`<li><button class="zc done" style="${tone(zi(z))}" data-tab="route" data-open="${esc(z)}"><span class="t">${esc(z)}<small>${esc(ZONES[z].d)}</small></span><span class="go" aria-hidden="true">↗</span></button></li>`).join("")}</ol>`:`<p class="small muted">Nothing saved yet. Tap Save for follow-up on any zone you visit.</p>`}</div>
+  <div class="offer" style="${tone(1)}"><span class="label">For you</span><h2>${g.offer}</h2><p class="small muted">${g.offerSub}</p>${S.offerTaken?`<p class="tick">✓ Requested. We'll email you.</p>`:`<button class="btn" id="go-offer">${g.cta} →</button>`}</div>
+  <button class="btn ghost" id="go-copy">Copy link to my avatar</button><button class="btn ghost" id="go-reset">Sign out</button>`);
+}
+
+// Real QR (qrcode-generator, UTF-8) drawn into a 21-unit viewBox with a 1-module quiet zone
+qrcode.stringToBytes=qrcode.stringToBytesFuncs["UTF-8"];
+function qr(text=S.badge){const q=qrcode(0,"M");q.addData(String(text));q.make();const n=q.getModuleCount(),u=21/(n+2),f=v=>v.toFixed(3);
+  let o=`<rect width="21" height="21" fill="#fff"/>`;for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(q.isDark(r,c))o+=`<rect x="${f((c+1)*u)}" y="${f((r+1)*u)}" width="${f(u+.02)}" height="${f(u+.02)}" fill="#001736"/>`;return o}
+
+document.addEventListener("click",e=>{
+  const t=e.target.closest("button");if(!t)return;
+  if(t.dataset.g){S.group=t.dataset.g;S.visited=[];render();return}
+  if(t.dataset.tab){S.tab=t.dataset.tab;S.zone=t.dataset.open||null;render();scrollTo(0,0);return}
+  if(t.dataset.zone!==undefined){S.zone=t.dataset.zone||null;render();scrollTo(0,0);return}
+  if(t.dataset.ct){CT=t.dataset.ct;renderConsole();return}
+  if(t.dataset.qr){QRP=+t.dataset.qr;renderConsole();return}
+  switch(t.id||t.dataset.act){
+    case"me":S.tab="me";S.zone=null;render();break;
+    case"go-scan":simulateLogin();break;
+    case"sc-close":closeScanner();break;
+    case"sc-sim":{const f=SCAN&&SCAN.sim;closeScanner();if(f)f();break}
+    case"go-sample":importLeads(SAMPLE);break;
+    case"go-create":S.visited=["Reception"];S.started=Date.now();S.step="app";S.tab="route";render();toast("Twin created. Reception badge earned.");break;
+    case"staff-scan":openScanner(onStaffScan,simStaffScan);break;
+    case"go-save":{const on=S.saved.includes(S.zone);S.saved=on?S.saved.filter(z=>z!==S.zone):[...S.saved,S.zone];render();toast(on?"Removed from follow-up":"Saved for follow-up");break}
+    case"go-redeem":S.redeemed=true;render();toast("Gift collected");break;
+    case"go-offer":S.offerTaken=true;render();break;
+    case"go-copy":{const url="https://twin.pttep.example/"+S.badge;Promise.resolve().then(()=>navigator.clipboard.writeText(url)).then(()=>toast("Link copied"),()=>toast(url));break}
+    case"go-reset":Object.assign(S,{step:"scan",tab:"route",zone:null,consent:false,photo:null,visited:[],saved:[],redeemed:false,offerTaken:false});render();break;
+    case"go-export":toast("Export is not connected in this prototype");break;
+  }
+});
+document.addEventListener("input",e=>{
+  const ok=()=>$("go-create").disabled=!(S.consent&&S.name.trim());
+  if(e.target.id==="f-name"){S.name=e.target.value;$("av").src=avatarSrc();ok()}
+  if(e.target.id==="f-consent"){S.consent=e.target.checked;ok()}
+});
+document.addEventListener("change",e=>{
+  if(e.target.id==="f-group"){CG=e.target.value;renderConsole();return}
+  if(e.target.id==="f-station"){ST=e.target.value;return}
+  if(e.target.id==="sc-photo"&&e.target.files[0]){readPhoto(e.target.files[0]);return}
+  if(e.target.id==="f-csv"&&e.target.files[0]){e.target.files[0].text().then(importLeads);return}
+  if(e.target.id!=="f-photo"||!e.target.files[0])return;
+  const r=new FileReader();r.onload=()=>{S.photo=r.result;render()};r.readAsDataURL(e.target.files[0]);
+});
+
+/* ---------- staff console (demo data) ---------- */
+const ZCOLS=["Worldwide Operation","Immersive Room","LED / Digital X","M&I + R&D","Low BTU / Wellhead","EP Forum","Discussion / EP Cafe"];
+const DWELL={dm:[3.1,4.2,2.6,1.2,0.8,1.5,6.4],gov:[3.8,4.0,1.4,4.6,3.9,2.7,1.1],tech:[1.2,1.6,3.4,5.8,6.2,4.4,5.1],talent:[2.6,5.3,2.9,1.0,0.7,2.2,0.9]};
+const SHARE={dm:.18,gov:.12,tech:.34,talent:.36};
+const OUTCOME={dm:["Meetings booked",18],gov:["Briefings requested",9],tech:["Papers requested",57],talent:["Talent sign-ups",148]};
+const LEADS=[["14:28","Siti Rahman","Petronas Carigali","tech","Low BTU / Wellhead","hot","Paper requested","Low BTU / Wellhead, M&I + R&D"],["14:25","Kenji Tanaka","INPEX","dm","Discussion / EP Cafe","hot","Meeting 15:30","Worldwide Operation"],["14:21","Pimchanok W.","Ministry of Energy","gov","M&I + R&D","warm","Briefing pack","M&I + R&D, Low BTU / Wellhead"],["14:17","Thanakorn P.","Chulalongkorn University","talent","Redeem","warm","Talent pool","Immersive Room, EP Forum"],["14:12","Amir Haddad","ADNOC","tech","EP Forum","cold","Follow-up email",""],["14:06","Michelle Chen","Chevron","dm","LED / Digital X","warm","Partnership deck","LED / Digital X"],["13:58","Somchai K.","DMF Thailand","gov","Low BTU / Wellhead","hot","Briefing 16:00","Low BTU / Wellhead"],["13:51","Lena Fischer","Wintershall Dea","tech","M&I + R&D","warm","Engineer contact","M&I + R&D"]];
+let CT="overview",CG="all";
+function renderConsole(){
+  $("f-group").innerHTML=[["all","All groups"],...Object.entries(GROUPS).map(([k,v])=>[k,v.name])].map(([k,n])=>`<option value="${k}" ${CG===k?"selected":""}>${n}</option>`).join("");
+  $("c-tabs").innerHTML=[["import","Lead import"],["station","Station scan"],["overview","Overview"],["leads","Leads"]].map(([k,n])=>`<button data-ct="${k}" ${CT===k?'aria-current="page"':""}>${n}</button>`).join("");
+  $("c-body").innerHTML=CT==="overview"?overview():CT==="import"?importView():CT==="station"?stationView():leads();
+}
+function overview(){
+  // cameras count people anonymously, so the first two stages never split by group
+  const k=CG==="all"?1:SHARE[CG];
+  const F=[["Passers-by",4820,true],["Entered",1410,true],["Twins created",Math.round(862*k)],["Leads",Math.round(318*k)],["Outcomes",Math.round(74*k)]];
+  const tiles=F.map((f,j)=>`<div class="tile"><span class="label">${f[0]}</span><b class="num">${f[1].toLocaleString()}</b><span class="d">${j===0?"610 / hour":`${Math.round(f[1]/F[j-1][1]*100)}% of ${F[j-1][0].toLowerCase()}`}</span></div>`).join("");
+  const funnel=F.map((f,j)=>`<div class="frow"><span>${f[0]}${f[2]&&CG!=="all"?' <span class="muted small">(all)</span>':""}</span><div class="track"><div class="fill num" style="width:${Math.max(4,f[1]/F[0][1]*100)}%">${f[1].toLocaleString()}</div></div><span class="rate num">${j?Math.round(f[1]/F[j-1][1]*100)+"%":""}</span></div>`).join("");
+  const split=Object.entries(GROUPS).map(([key,g])=>`<div class="r" style="${CG!=="all"&&CG!==key?"opacity:.4":""}"><span>${g.name}</span><b class="num">${Math.round(862*SHARE[key])}</b><span class="bar"><i style="width:${SHARE[key]/.36*100}%"></i></span><span class="small muted">${OUTCOME[key][0]}</span><span class="small num">${OUTCOME[key][1]}</span></div>`).join("");
+  const hmax=Math.max(...Object.values(DWELL).flat());
+  const heat=`<thead><tr><th>Group</th>${ZCOLS.map(z=>`<th>${z}</th>`).join("")}</tr></thead><tbody>${Object.entries(DWELL).filter(([key])=>CG==="all"||CG===key).map(([key,row])=>`<tr><td>${GROUPS[key].name}</td>${row.map(v=>`<td class="c num" style="background:rgba(0,218,255,${(v/hmax*.7).toFixed(2)})">${v.toFixed(1)}</td>`).join("")}</tr>`).join("")}</tbody>`;
+  return `<div class="tiles">${tiles}</div>
+  <div class="grid g2"><div class="box"><div class="box-h"><h2>Today's funnel</h2><span class="small muted">Since 09:00</span></div><div class="funnel">${funnel}</div></div>
+  <div class="box"><div class="box-h"><h2>Twins by group</h2></div><div class="split">${split}</div></div></div>
+  <div class="grid"><div class="box"><div class="box-h"><h2>Average dwell by zone</h2><span class="small muted">Minutes</span></div><div class="scroll"><table class="heat">${heat}</table></div></div></div>`;
+}
+function leads(){
+  const rows=LEADS.filter(r=>CG==="all"||r[3]===CG);
+  return `<div class="box"><div class="box-h"><h2>Leads <span class="muted num" style="font-weight:300">${rows.length}</span></h2><button class="btn sm ghost" id="go-export">Export CSV</button></div>
+  <div class="scroll"><table><thead><tr><th>Time</th><th>Visitor</th><th>Company</th><th>Group</th><th>Last zone</th><th>Status</th><th>Saved topics</th><th>Next step</th></tr></thead><tbody>
+  ${rows.map(r=>`<tr><td class="num">${r[0]}</td><td style="white-space:nowrap"><img class="lead-av" src="${avatarSrc(r[1],null)}" alt="">${esc(r[1])}</td><td>${esc(r[2])}</td><td>${GROUPS[r[3]].name}</td><td>${esc(r[4])}</td><td><span class="temp ${r[5]}">${r[5]}</span></td><td>${r[7]?esc(r[7]):'<span class="muted">None</span>'}</td><td>${esc(r[6])}</td></tr>`).join("")||`<tr><td colspan="8" class="muted">No leads from this group yet today.</td></tr>`}
+  </tbody></table></div></div>`;
+}
+
+/* ---------- lead import: lead capture app export -> visitor profiles -> login QR ---------- */
+let PROFILES=[],QRP=null;
+const SAMPLE=`name,company,job_title,email,badge
+Nattaya Srisuk,Siam Offshore Engineering,Senior Reservoir Engineer,nattaya@example.com,IPTC27-048213
+Kenji Tanaka,INPEX,Vice President Business Development,kenji@example.com,IPTC27-051177
+Pimchanok W.,Ministry of Energy,Policy Analyst,pimchanok@example.com,IPTC27-049902
+Thanakorn P.,Chulalongkorn University,Petroleum Engineering Student,thanakorn@example.com,IPTC27-050318
+"Lena Fischer","Wintershall Dea, Kassel",Production Engineer,lena@example.com,IPTC27-052640`;
+// RFC 4180-ish: quoted fields may hold commas, quotes ("") and newlines
+function parseCSV(t){
+  const rows=[];let row=[],f="",q=false;
+  for(let i=0;i<t.length;i++){const c=t[i];
+    if(q){if(c==='"'){if(t[i+1]==='"'){f+='"';i++}else q=false}else f+=c}
+    else if(c==='"')q=true;
+    else if(c===","){row.push(f);f=""}
+    else if(c==="\n"||c==="\r"){if(c==="\r"&&t[i+1]==="\n")i++;row.push(f);rows.push(row);row=[];f=""}
+    else f+=c}
+  if(f||row.length){row.push(f);rows.push(row)}
+  return rows.filter(r=>r.some(x=>x.trim()));
+}
+// order matters: a ministry analyst is gov, an engineering student is talent
+const groupFor=(title,company)=>{const s=(title+" "+company).toLowerCase();
+  return /student|universit|intern|graduate|research|lecturer|professor/.test(s)?"talent":/ministry|government|regulat|department|dmf|authority|agency/.test(s)?"gov":/engineer|geolog|geophys|technical|scientist|specialist|analyst/.test(s)?"tech":"dm"};
+function importLeads(text){
+  const [head,...rows]=parseCSV(String(text).replace(/^﻿/,""));const h=(head||[]).map(x=>x.trim().toLowerCase());
+  const col=(...n)=>h.findIndex(x=>n.includes(x));
+  const ci={name:col("name","full name","full_name"),company:col("company","organization","organisation"),title:col("job_title","job title","title"),email:col("email"),badge:col("badge","badge_id","badge id")};
+  if(ci.name<0){toast("No name column in this file");return}
+  // shortcut: 500-row cap per upload, raise or page it if one export is bigger
+  const add=rows.slice(0,500).map((r,j)=>{const g=k=>ci[k]<0?"":(r[ci[k]]||"").trim().slice(0,80);
+    return{name:g("name"),company:g("company"),title:g("title"),email:g("email"),badge:g("badge")||"IPTC27-"+String(Date.now()+j).slice(-6),in:false}}).filter(p=>p.name);
+  add.forEach(p=>p.group=groupFor(p.title,p.company));
+  PROFILES=[...add,...PROFILES.filter(o=>!add.some(p=>p.badge===o.badge))];QRP=add.length?0:QRP;
+  toast(`${add.length} profiles generated`);CT="import";renderConsole();
+}
+function login(p){p.in=true;Object.assign(S,{name:p.name,company:p.company,title:p.title,badge:p.badge,group:p.group,step:"create",tab:"route",zone:null,consent:false,photo:null,visited:[],saved:[],redeemed:false,offerTaken:false})}
+function importView(){
+  const rows=PROFILES.map((p,i)=>[p,i]).filter(([p])=>CG==="all"||p.group===CG),p=PROFILES[QRP];
+  return `<div class="grid g2" style="margin-top:0"><div class="box"><div class="box-h"><h2>1 · Upload lead export</h2><span class="small muted num">${PROFILES.length} profiles</span></div>
+  <p class="small muted">CSV from the lead capture app with name, company, job_title, email, badge. Each row becomes a visitor profile; the group is matched from job title.</p>
+  <div style="display:flex;gap:10px;flex-wrap:wrap"><input type="file" id="f-csv" class="vh" accept=".csv,text/csv"><label class="btn sm" for="f-csv" style="cursor:pointer">Upload CSV</label><button class="btn sm ghost" id="go-sample">Load sample export</button></div>
+  <div class="scroll"><table><thead><tr><th>Visitor</th><th>Company</th><th>Job title</th><th>Group</th><th>Status</th><th></th></tr></thead><tbody>
+  ${rows.map(([p,i])=>`<tr><td style="white-space:nowrap"><img class="lead-av" src="${avatarSrc(p.name,null)}" alt="">${esc(p.name)}</td><td>${esc(p.company)}</td><td>${esc(p.title)}</td><td>${GROUPS[p.group].name}</td><td>${p.in?'<span class="temp hot">Logged in</span>':'<span class="temp warm">QR ready</span>'}</td><td><button class="btn sm ghost" data-qr="${i}" ${i===QRP?'aria-current="true"':""}>Show QR</button></td></tr>`).join("")||`<tr><td colspan="6" class="muted">No profiles yet. Upload a lead export.</td></tr>`}
+  </tbody></table></div></div>
+  <div class="box qrbox">${p?`<h2>2 · Profile QR</h2><svg class="qr" viewBox="0 0 21 21" role="img" aria-label="Login QR for ${esc(p.name)}">${qr(loginUrl(p))}</svg><div><b style="font-weight:400">${esc(p.name)}</b><p class="small muted">${esc(p.company)} · ${GROUPS[p.group].name}</p></div><p class="small muted">Show this on the booth screen. The visitor scans it with their phone camera to open their profile.</p><a class="small" href="${esc(loginUrl(p))}" target="_blank" rel="noopener">Open this profile in the visitor app ↗</a>`
+    :`<h2>2 · Profile QR</h2><p class="muted">Upload leads, then pick Show QR on a profile.</p>`}</div></div>`;
+}
+
+/* ---------- in-page camera scanner: station staff read the QR on a visitor's My card ---------- */
+// shortcut: the QR carries the profile itself so any staff device can read it; swap for a one-time token URL before real visitor data goes in it
+// visitor-app/ and staff-console/ sit side by side, so the console links to ../visitor-app/
+const SITE_ROOT=new URL("../",location.href).href,VISITOR_URL=SITE_ROOT+"visitor-app/";
+const qs=p=>new URLSearchParams({b:p.badge,n:p.name,c:p.company,t:p.title,g:p.group});
+const loginUrl=p=>VISITOR_URL+"?"+qs(p);
+// real path per profile, served on GitHub Pages through the site-root 404.html
+// shortcut: the details ride in the #fragment (never sent to a server); drop them once a backend can look the id up
+const cardUrl=p=>SITE_ROOT+"profile/"+encodeURIComponent(p.badge)+"#"+new URLSearchParams({n:p.name,c:p.company,t:p.title,g:p.group});
+let CAM=null,SCAN=null;
+function readQR(src,w,h){const r=jsQR(src,w,h);return r&&r.data}
+async function openScanner(read,sim){
+  if($("scanner"))return;
+  SCAN={read,sim};
+  const el=document.createElement("div");el.className="scanner";el.id="scanner";el.setAttribute("role","dialog");el.setAttribute("aria-modal","true");el.setAttribute("aria-label","Scan visitor card");
+  el.innerHTML=`<video playsinline muted aria-hidden="true"></video><div class="vf" aria-hidden="true"><i></i></div><p class="hint" role="status">Opening camera…</p>
+  <div class="bar"><button class="btn ghost" id="sc-close">Cancel</button><input type="file" id="sc-photo" class="vh" accept="image/*" capture="environment"><label class="btn ghost" for="sc-photo">Take photo</label><button class="btn" id="sc-sim">Simulate</button></div>`;
+  document.body.append(el);$("sc-close").focus();
+  const v=el.querySelector("video"),hint=el.querySelector(".hint");
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"},audio:false});
+    if(!$("scanner")){stream.getTracks().forEach(t=>t.stop());return} // cancelled while the browser asked
+    CAM=stream;v.srcObject=stream;await v.play();hint.textContent="Point at the QR on the visitor's My card";
+    const c=document.createElement("canvas"),x=c.getContext("2d",{willReadFrequently:true});
+    const tick=()=>{if(!CAM)return;
+      if(v.readyState>=2&&v.videoWidth){const w=c.width=Math.min(v.videoWidth,720),h=c.height=Math.round(v.videoHeight*w/v.videoWidth);x.drawImage(v,0,0,w,h);
+        const d=readQR(x.getImageData(0,0,w,h).data,w,h);if(d){const f=SCAN.read;closeScanner();f(d);return}}
+      requestAnimationFrame(tick)};
+    tick();
+  }catch(err){hint.textContent="Live camera is blocked here. Tap Take photo to use the device camera."}
+}
+function closeScanner(){if(CAM){CAM.getTracks().forEach(t=>t.stop());CAM=null}SCAN=null;const el=$("scanner");if(el)el.remove()}
+function readPhoto(file){
+  const img=new Image(),url=URL.createObjectURL(file);
+  img.onload=()=>{URL.revokeObjectURL(url);const w=Math.min(img.naturalWidth,1280),h=Math.round(img.naturalHeight*w/img.naturalWidth),c=document.createElement("canvas");c.width=w;c.height=h;
+    const x=c.getContext("2d");x.drawImage(img,0,0,w,h);const d=readQR(x.getImageData(0,0,w,h).data,w,h);
+    if(d&&SCAN){const f=SCAN.read;closeScanner();f(d)}else{const hint=document.querySelector("#scanner .hint");if(hint)hint.textContent="No QR code found in that photo. Try again, closer."}};
+  img.onerror=()=>{URL.revokeObjectURL(url);toast("Could not read that image")};
+  img.src=url;
+}
+function simulateLogin(){const p=PROFILES.find(p=>!p.in);if(p)login(p);else S.step="create";render();toast("Profile found")}
+// QR text is untrusted: accept only our card/login URL, clip lengths; everything shown goes through esc()
+function parseVisitor(text){
+  let u=null;try{u=new URL(String(text).trim())}catch(e){}
+  if(!u||!/^https?:$/.test(u.protocol))return null;
+  // card QR: <site>/profile/<id>#details · after the 404 redirect: ?profile=<id>#details · login QR: ?b=<id>&n=…
+  let id=null;const m=u.pathname.match(/\/profile\/([^/]+)\/?$/);try{id=m?decodeURIComponent(m[1]):u.searchParams.get("profile")}catch(e){}
+  const P=id?new URLSearchParams(u.hash.slice(1)):u.searchParams,q=k=>(P.get(k)||"").slice(0,80),b=(id||q("b")).slice(0,40);
+  if(!b)return null;
+  return{badge:b,name:q("n")||"Visitor",company:q("c"),title:q("t"),group:GROUPS[q("g")]?q("g"):"dm"};
+}
+const STATIONS=Object.keys(ZONES).filter(z=>z!=="Reception");
+let ST="Worldwide Operation",LAST=null,SCANS=[];
+function onStaffScan(text){
+  const v=parseVisitor(text);if(!v){toast("Not a PTTEP visitor card");return}
+  // shortcut: the check-in is only logged on this device; a shared backend is needed to update the visitor's own app
+  const me=false,res=ST==="Redeem"?"Gift handed over":`Checked in at ${ST}`;
+  const t=new Date().toTimeString().slice(0,5);
+  LAST={...v,res,me,t};SCANS=[LAST,...SCANS].slice(0,50);
+  CT="station";renderConsole();toast(res);
+}
+function simStaffScan(){onStaffScan(cardUrl(PROFILES[0]||S))}
+function stationView(){
+  const L=LAST,g=L&&GROUPS[L.group];
+  const info=L?`<div class="hello"><img class="avatar" src="${avatarSrc(L.name,null)}" alt="" style="border-radius:0"><div><h2>${esc(L.name)}</h2><p class="small muted">${esc([L.company,L.title].filter(Boolean).join(" · "))}</p></div></div>
+    <p class="tick" style="font-size:15px">✓ ${esc(L.res)}</p>
+    <div class="rows" style="padding:0"><div><span>Group</span><b>${g.name}</b></div><div><span>Badge</span><b class="num">${esc(L.badge)}</b></div>
+    ${L.me?`<div><span>Route</span><b class="num">${S.visited.length} of ${route().length} zones</b></div><div><span>Saved topics</span><b>${S.saved.length?esc(S.saved.join(", ")):"None yet"}</b></div><div><span>Gift</span><b>${S.redeemed?"Collected":"Not yet"}</b></div>`:""}</div>
+    <p class="small muted">Talking points: ${g.view} · offer “${g.offer}”.</p>`
+    :`<p class="muted">Scan a visitor's My card. Their details show here.</p>`;
+  return `<div class="grid g2" style="margin-top:0"><div class="box"><div class="box-h"><h2>Station scan</h2></div>
+  <p class="small muted">Scan the QR on a visitor's My card. It checks them in at this station and shows who they are. The camera opens inside this page.</p>
+  <div class="field"><label for="f-station">This station</label><select id="f-station">${STATIONS.map(z=>`<option ${z===ST?"selected":""}>${esc(z)}</option>`).join("")}</select></div>
+  <button class="btn" data-act="staff-scan">Scan visitor card</button></div>
+  <div class="box">${L?`<div class="box-h"><h2>Visitor</h2><span class="small muted num">${L.t}</span></div>`:"<h2>Visitor</h2>"}${info}</div></div>
+  <div class="grid"><div class="box"><div class="box-h"><h2>Scans at this booth</h2><span class="small muted num">${SCANS.length}</span></div><div class="scroll"><table><thead><tr><th>Time</th><th>Visitor</th><th>Company</th><th>Group</th><th>Result</th></tr></thead><tbody>
+  ${SCANS.map(s=>`<tr><td class="num">${s.t}</td><td>${esc(s.name)}</td><td>${esc(s.company)}</td><td>${GROUPS[s.group].name}</td><td>${esc(s.res)}</td></tr>`).join("")||`<tr><td colspan="5" class="muted">No scans yet.</td></tr>`}
+  </tbody></table></div></div></div>`;
+}
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$("scanner"))closeScanner()});
+
+renderConsole();
+</script>
+
+</body></html>
